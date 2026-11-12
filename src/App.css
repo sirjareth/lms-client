@@ -1,0 +1,15 @@
+/* App-specific custom styling */
+.navbar-brand-kodigo {
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  font-size: 1.25rem;
+}
+
+.session-row {
+  transition: background-color 0.15s ease-in-out;
+  border-bottom: 1px solid var(--kodigo-border);
+}
+
+.session-row:hover {
+  background-color: #f1f5f9;
+}
