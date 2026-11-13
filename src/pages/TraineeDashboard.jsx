@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import TestResultModal from '../components/TestResultModal';
@@ -6,6 +7,7 @@ import SessionFeedbackModal from '../components/SessionFeedbackModal';
 
 export default function TraineeDashboard() {
   const { user } = useAuth();
+  const { setActiveBatch } = useOutletContext() || {};
   const [enrollments, setEnrollments] = useState([]);
   const [selectedBatch, setSelectedBatch] = useState(null);
   const [sessions, setSessions] = useState([]);
@@ -15,7 +17,6 @@ export default function TraineeDashboard() {
   const [submittingId, setSubmittingId] = useState(null);
   const [error, setError] = useState('');
 
-  // Modals state
   const [activeTestSubmissionId, setActiveTestSubmissionId] = useState(null);
   const [activeFeedbackSession, setActiveFeedbackSession] = useState(null);
 
@@ -28,32 +29,40 @@ export default function TraineeDashboard() {
     setError('');
     try {
       const enrollRes = await api.getMyEnrollments();
-      const userEnrollments = Array.isArray(enrollRes) ? enrollRes : enrollRes.enrollments || [];
+      const userEnrollments = Array.isArray(enrollRes) ? enrollRes : enrollRes?.enrollments || [];
       setEnrollments(userEnrollments);
 
       if (userEnrollments.length > 0) {
-        const activeBatch = userEnrollments[0].batch || userEnrollments[0];
-        setSelectedBatch(activeBatch);
+        const activeEnrollment = userEnrollments[0];
+        // Safely extract batch object or ID
+        const batchObj = typeof activeEnrollment.batch === 'object' ? activeEnrollment.batch : null;
+        const batchId = batchObj ? batchObj._id : activeEnrollment.batch;
 
-        const batchId = activeBatch._id || activeBatch;
-        const [sessionsRes, submissionsRes] = await Promise.all([
-          api.getSessionsByBatch(batchId),
-          api.getMySubmissions()
-        ]);
+        if (batchObj) {
+          setSelectedBatch(batchObj);
+          if (setActiveBatch) setActiveBatch(batchObj);
+        }
 
-        const sessionsList = Array.isArray(sessionsRes) ? sessionsRes : sessionsRes.sessions || [];
-        setSessions(sessionsList);
+        if (batchId) {
+          const [sessionsRes, submissionsRes] = await Promise.all([
+            api.getSessionsByBatch(batchId),
+            api.getMySubmissions().catch(() => [])
+          ]);
 
-        const subList = Array.isArray(submissionsRes) ? submissionsRes : submissionsRes.submissions || [];
-        const subMap = {};
-        subList.forEach((sub) => {
-          const actId = sub.activity?._id || sub.activity;
-          subMap[actId] = sub;
-        });
-        setSubmissions(subMap);
+          const sessionsList = Array.isArray(sessionsRes) ? sessionsRes : sessionsRes?.sessions || [];
+          setSessions(sessionsList);
+
+          const subList = Array.isArray(submissionsRes) ? submissionsRes : submissionsRes?.submissions || [];
+          const subMap = {};
+          subList.forEach((sub) => {
+            const actId = sub.activity?._id || sub.activity;
+            if (actId) subMap[actId] = sub;
+          });
+          setSubmissions(subMap);
+        }
       }
     } catch (err) {
-      console.error(err);
+      console.error('Error loading dashboard:', err);
       setError('Failed to load dashboard data.');
     } finally {
       setLoading(false);
@@ -73,10 +82,7 @@ export default function TraineeDashboard() {
       const res = await api.submitActivity(activityId, url.trim());
       if (res.submission || res._id) {
         const newSub = res.submission || res;
-        setSubmissions((prev) => ({
-          ...prev,
-          [activityId]: newSub
-        }));
+        setSubmissions((prev) => ({ ...prev, [activityId]: newSub }));
       } else {
         alert(res.message || 'Submission failed.');
       }
@@ -99,102 +105,178 @@ export default function TraineeDashboard() {
   }
 
   return (
-    <div className="container-fluid py-4 px-4" style={{ backgroundColor: '#f8fafc', minHeight: '100vh' }}>
-      {/* Dashboard Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h2 className="fw-bold mb-1" style={{ color: '#0f172a' }}>{selectedBatch?.name || 'Batch'}</h2>
-          <p className="text-muted mb-0">JAVA BACKEND DEVELOPMENT | {selectedBatch?.mode || 'Day Class | Online'}</p>
-        </div>
-        <div className="text-end">
-          <p className="mb-0 fw-bold" style={{ color: '#0f172a' }}>{user?.name || 'Maria Santos'}</p>
-        </div>
+    <div className="p-4">
+      {/* Dashboard Title Section */}
+      <div className="mb-4">
+        <h2 className="fw-bold mb-1" style={{ color: '#0f172a' }}>{selectedBatch?.name || 'Classroom Dashboard'}</h2>
+        <p className="text-muted small mb-0">
+          <span className="text-uppercase">{selectedBatch?.programTitle || 'Java Backend Development'}</span> | {selectedBatch?.mode || 'Online Class'}
+        </p>
       </div>
 
-      {/* Stats Cards */}
+      {/* Tabs Header */}
+      <div className="d-flex border-bottom mb-4">
+        <button className="btn border-0 py-2 px-4 border-bottom border-3 border-primary text-primary fw-bold bg-transparent">Sessions</button>
+        <button className="btn border-0 py-2 px-4 text-muted bg-transparent">Grades</button>
+        <button className="btn border-0 py-2 px-4 text-muted bg-transparent">Attendance</button>
+        <button className="btn border-0 py-2 px-4 text-muted bg-transparent">Recordings</button>
+        <button className="btn border-0 py-2 px-4 text-muted bg-transparent">Requirements</button>
+      </div>
+
+      {/* Stats Cards Row */}
       <div className="row g-3 mb-4">
         <div className="col-md-3">
-          <div className="p-3 bg-white rounded shadow-sm border">
-            <h6 className="text-muted small">Activities passed</h6>
-            <h3 className="fw-bold mb-0">2 / 12</h3>
+          <div className="bg-white p-4 rounded-3 border h-100 shadow-sm">
+            <h1 className="fw-bold mb-1" style={{ color: '#16a34a' }}>2 / 12</h1>
+            <div className="text-muted small">Activities passed</div>
           </div>
         </div>
         <div className="col-md-3">
-          <div className="p-3 bg-white rounded shadow-sm border">
-            <h6 className="text-muted small">Attendance</h6>
-            <h3 className="fw-bold mb-0" style={{ color: '#1d4ed8' }}>92%</h3>
+          <div className="bg-white p-4 rounded-3 border h-100 shadow-sm">
+            <h1 className="fw-bold mb-1" style={{ color: '#2563eb' }}>92%</h1>
+            <div className="text-muted small">Attendance</div>
           </div>
         </div>
         <div className="col-md-3">
-          <div className="p-3 bg-white rounded shadow-sm border">
-            <h6 className="text-muted small">Pending activities</h6>
-            <h3 className="fw-bold mb-0">3</h3>
+          <div className="bg-white p-4 rounded-3 border h-100 shadow-sm">
+            <h1 className="fw-bold mb-1" style={{ color: '#d97706' }}>3</h1>
+            <div className="text-muted small">Pending activities</div>
           </div>
         </div>
         <div className="col-md-3">
-          <div className="p-3 bg-white rounded shadow-sm border">
-            <h6 className="text-muted small">Overall grade</h6>
-            <h3 className="fw-bold mb-0">87</h3>
+          <div className="bg-white p-4 rounded-3 border h-100 shadow-sm">
+            <h1 className="fw-bold mb-1" style={{ color: '#1e293b' }}>87</h1>
+            <div className="text-muted small">Overall grade</div>
           </div>
         </div>
       </div>
 
-      {/* Sessions Table */}
-      <div className="bg-white rounded shadow-sm border overflow-hidden">
-        <div className="p-3 border-bottom d-flex gap-4">
-          <span className="fw-bold pb-2 border-bottom border-2 border-primary" style={{ color: '#1d4ed8' }}>Sessions</span>
-          <span className="text-muted">Grades</span>
-          <span className="text-muted">Attendance</span>
-          <span className="text-muted">Recordings</span>
-          <span className="text-muted">Requirements</span>
+      {/* Legend & Search */}
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <div className="d-flex gap-3 small fw-semibold text-uppercase" style={{ letterSpacing: '0.5px' }}>
+          <span className="text-success"><span className="me-1">●</span> PASS</span>
+          <span className="text-danger"><span className="me-1">●</span> FAIL</span>
+          <span className="text-warning"><span className="me-1">●</span> CHECKING</span>
+          <span className="text-secondary"><span className="me-1">●</span> NOT SUBMITTED</span>
         </div>
-        <table className="table table-hover mb-0">
-          <thead className="table-light">
-            <tr>
-              <th className="px-4">Status</th>
-              <th>Activity</th>
-              <th>GitHub URL</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sessions.map((session) => {
-              const activity = session.activity;
-              const submission = activity ? submissions[activity._id] : null;
+        <div className="input-group input-group-sm w-auto" style={{ minWidth: '250px' }}>
+          <input type="text" className="form-control" placeholder="Search sessions..." />
+        </div>
+      </div>
 
-              return (
-                <tr key={session._id}>
-                  <td className="px-4">
-                    <span className={`badge ${submission?.status === 'passed' ? 'bg-success' : submission?.status === 'failed' ? 'bg-danger' : 'bg-warning'}`}>
-                      {submission?.status?.toUpperCase() || 'NOT SUBMITTED'}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="fw-bold">{session.code} {session.title}</div>
-                    <small className="text-muted">Discussed on {new Date(session.discussedAt).toLocaleDateString()}</small>
-                  </td>
-                  <td>
-                    <input
-                      type="text"
-                      className="form-control form-control-sm"
-                      placeholder="Paste your GitHub repo URL"
-                      onChange={(e) => handleUrlChange(activity._id, e.target.value)}
-                    />
-                  </td>
-                  <td>
-                    <button
-                      className="btn btn-sm btn-primary"
-                      onClick={() => handleSubmit(activity._id)}
-                    >
-                      {submission ? 'Resubmit' : 'Submit'}
+      {/* Sessions List Container */}
+      <div className="bg-kodigo-navy text-white p-3 rounded-top d-flex justify-content-between align-items-center mb-0">
+        <h6 className="mb-0 fw-bold">{selectedBatch?.name || 'Batch'} · {selectedBatch?.programTitle || 'Java'} Fundamentals - {sessions.length} Sessions</h6>
+        <span className="small">2 / {sessions.length} passed</span>
+      </div>
+
+      <div className="bg-white border rounded-bottom border-top-0 mb-4 overflow-hidden">
+        {sessions.length === 0 ? (
+          <div className="p-5 text-center text-muted">No sessions published for this batch yet.</div>
+        ) : (
+          sessions.map((session, index) => {
+            const activity = session.activity;
+            const submission = activity ? submissions[activity._id] : null;
+            const status = submission?.status || 'not submitted';
+
+            return (
+              <div key={session._id} className={`p-4 ${index !== sessions.length - 1 ? 'border-bottom' : ''} d-flex align-items-start gap-4`}>
+                <div style={{ width: '100px' }}>
+                  <div className={`text-uppercase fw-bold small mb-2 ${
+                    status === 'passed' ? 'text-success' :
+                    status === 'failed' ? 'text-danger' :
+                    status === 'checking' || status === 'queued' ? 'text-warning' : 'text-secondary'
+                  }`}>
+                    {status === 'queued' || status === 'checking' ? 'CHECKING' : status.replace('-', ' ')}
+                  </div>
+                  {submission ? (
+                    <button className="btn btn-primary btn-sm px-3 w-100" style={{ fontSize: '0.7rem' }} onClick={() => setActiveTestSubmissionId(submission._id)}>
+                      See results
                     </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                  ) : (
+                    <button className="btn btn-outline-secondary btn-sm px-3 w-100 disabled" style={{ fontSize: '0.7rem' }}>
+                      No result yet
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex-grow-1">
+                  {/* Session Header Title & Discussed Info */}
+                  <div className="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                      <h6 className="fw-bold mb-1" style={{ color: '#0f172a', fontSize: '1rem' }}>
+                        {session.code} {session.title}
+                      </h6>
+                      {activity && activity.title && (
+                        <div className="text-secondary small fw-semibold">
+                          Activity: {activity.title}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-end text-muted small">
+                      <div className="mb-1"><span className="me-1">●</span> Discussed on {session.discussedAt ? new Date(session.discussedAt).toLocaleDateString() : 'TBA'}</div>
+                      <a href="#feedback" className="text-primary text-decoration-none" onClick={(e) => { e.preventDefault(); setActiveFeedbackSession(session); }}>How was the session?</a>
+                    </div>
+                  </div>
+
+                  {/* Activity Submissions Area */}
+                  {activity && (
+                    <div className="mt-2 pt-1 border-top border-light">
+                      <div className="d-flex align-items-center gap-2 mb-1">
+                        {submission?.githubUrl ? (
+                          <a href={submission.githubUrl} target="_blank" rel="noreferrer" className="text-primary small text-decoration-none text-truncate" style={{ maxWidth: '400px' }}>
+                            {submission.githubUrl}
+                          </a>
+                        ) : (
+                          <div className="input-group input-group-sm" style={{ maxWidth: '450px' }}>
+                            <input
+                              type="text"
+                              className="form-control"
+                              placeholder="Paste your GitHub repo URL"
+                              value={githubUrls[activity._id] || ''}
+                              onChange={(e) => handleUrlChange(activity._id, e.target.value)}
+                            />
+                            <button
+                              className="btn btn-primary px-3"
+                              onClick={() => handleSubmit(activity._id)}
+                              disabled={submittingId === activity._id || !githubUrls[activity._id]}
+                            >
+                              Submit
+                            </button>
+                          </div>
+                        )}
+                        {submission?.githubUrl && (
+                          <button className="btn btn-outline-secondary btn-sm px-3 py-1" style={{ fontSize: '0.7rem' }}>Resubmit</button>
+                        )}
+                      </div>
+                      {submission && (
+                        <div className="text-muted" style={{ fontSize: '0.75rem' }}>
+                          Graded by: {submission.gradedBy?.name || 'Kodigo auto-checker'} @ {new Date(submission.gradedAt || submission.submittedAt).toLocaleString()}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
+
+      {activeTestSubmissionId && (
+        <TestResultModal
+          submissionId={activeTestSubmissionId}
+          onClose={() => setActiveTestSubmissionId(null)}
+        />
+      )}
+
+      {activeFeedbackSession && (
+        <SessionFeedbackModal
+          session={activeFeedbackSession}
+          onClose={() => setActiveFeedbackSession(null)}
+          onSuccess={() => alert('Thank you for your feedback!')}
+        />
+      )}
     </div>
   );
 }

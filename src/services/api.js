@@ -73,6 +73,24 @@ export const api = {
     return res.json();
   },
 
+  createSession: async (data) => {
+    const res = await fetch(`${API_URL}/sessions`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
+  createActivity: async (data) => {
+    const res = await fetch(`${API_URL}/activities`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
   // Submissions
   submitActivity: async (activityId, githubUrl) => {
     const res = await fetch(`${API_URL}/submissions`, {

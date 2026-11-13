@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
+import DashboardLayout from './components/DashboardLayout';
 
 // Pages
 import Login from './pages/Login';
@@ -13,43 +13,45 @@ function AppRoutes() {
   const { user } = useAuth();
 
   return (
-    <div className="d-flex flex-column min-vh-100">
-      <Navbar />
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
-        <Route path="/register" element={user ? <Navigate to="/" /> : <Register />} />
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
+      <Route path="/register" element={user ? <Navigate to="/" /> : <Register />} />
 
-        {/* Private Trainee Routes */}
-        <Route element={<ProtectedRoute allowedRoles={['trainee']} />}>
-          <Route path="/dashboard" element={<TraineeDashboard />} />
+      {/* Authenticated Dashboard Routes */}
+      <Route element={<ProtectedRoute allowedRoles={['trainee', 'trainer', 'admin']} />}>
+        <Route element={<DashboardLayout />}>
+          {/* Private Trainee Routes */}
+          <Route element={<ProtectedRoute allowedRoles={['trainee']} />}>
+            <Route path="/dashboard" element={<TraineeDashboard />} />
+          </Route>
+
+          {/* Private Trainer/Admin Routes */}
+          <Route element={<ProtectedRoute allowedRoles={['trainer', 'admin']} />}>
+            <Route path="/trainer" element={<TrainerDashboard />} />
+          </Route>
         </Route>
+      </Route>
 
-        {/* Private Trainer/Admin Routes */}
-        <Route element={<ProtectedRoute allowedRoles={['trainer', 'admin']} />}>
-          <Route path="/trainer" element={<TrainerDashboard />} />
-        </Route>
-
-        {/* Root Redirect */}
-        <Route
-          path="/"
-          element={
-            user ? (
-              (user.role === 'trainee' || (!user.role && !user.isAdmin)) ? (
-                <Navigate to="/dashboard" />
-              ) : (
-                <Navigate to="/trainer" />
-              )
+      {/* Root Redirect */}
+      <Route
+        path="/"
+        element={
+          user ? (
+            (user.role === 'trainee' || (!user.role && !user.isAdmin)) ? (
+              <Navigate to="/dashboard" />
             ) : (
-              <Navigate to="/login" />
+              <Navigate to="/trainer" />
             )
-          }
-        />
+          ) : (
+            <Navigate to="/login" />
+          )
+        }
+      />
 
-        {/* 404 Fallback */}
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </div>
+      {/* 404 Fallback */}
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
   );
 }
 
