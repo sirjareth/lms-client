@@ -125,6 +125,14 @@ export const api = {
     return res.json();
   },
 
+  recheckSubmission: async (submissionId) => {
+    const res = await fetch(`${API_URL}/submissions/${submissionId}/recheck`, {
+      method: 'POST',
+      headers: getHeaders(),
+    });
+    return res.json();
+  },
+
   // Session Feedback
   submitSessionFeedback: async (sessionId, rating, remarks) => {
     const res = await fetch(`${API_URL}/sessions/${sessionId}/feedback`, {

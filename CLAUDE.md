@@ -126,7 +126,15 @@ Sprint goal: The dashboard with session-based activities and auto-checker flow i
 Update this section after each finished card.
 
 - Sprint 3 & 4 (Partial): Auto-checker and Trainee Dashboard.
-  - Backend: Real auto-checker implemented (`checkerService.js`). Clones student repo, injects standard `pom.xml` and trainer test suites, runs `mvn test`, and parses JUnit results.
-  - Frontend: Trainee Dashboard (`TraineeDashboard.jsx`) updated with polling (3s), optimistic updates, and dynamic stat cards.
-  - **Unresolved Issue**: Trainee Dashboard sometimes reverts to "not submitted yet" after a refresh or submission. High suspicion of ObjectId vs String key mismatch in the `submissions` state map or race conditions during state reconciliation.
+  - Backend: Real auto-checker implemented and robust.
+    - Fixes:
+      - Resolved "test suite not found" by updating path logic to handle directory structure changes.
+      - Fixed compilation issues by auto-injecting a standard `pom.xml` with JUnit 5 dependencies to all submissions.
+      - Fixed `E11000 duplicate key error` in `CheckResult` by implementing `findOneAndUpdate` with `upsert: true`.
+      - Corrected `recheckSubmission` route and backend logic to allow proper re-queuing of submissions.
+  - Frontend: Trainee Dashboard (`TraineeDashboard.jsx`) fully functional.
+    - Resolved persistent "not submitted" bug by fixing ObjectId/String key reconciliation logic in submission maps.
+    - Added silent auto-polling (3s) for real-time status updates (Queued -> Checking -> Passed/Failed) without page refreshes.
+    - Added optimistic UI updates for instant feedback upon submission.
+    - Fixed API pathing issues in `api.js` and ensured route coverage for my-submissions.
 
