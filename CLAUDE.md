@@ -125,7 +125,8 @@ Sprint goal: The dashboard with session-based activities and auto-checker flow i
 
 Update this section after each finished card.
 
-- Sprint 1: Core API (User, Batch, Enrollment) backend models, controllers, and routes fully implemented and mounted.
-  - User API: register, login, getProfile (`GET /users/details`), getAllUsers (`GET /users`), updateRole (`PATCH /users/:id/role`), deactivateUser (`PATCH /users/:id/deactivate`).
-  - Batch API: CRUD (`POST /batches`, `GET /batches`, `GET /batches/:id`, `PATCH /batches/:id`, `PATCH /batches/:id/archive`).
-  - Enrollment API: enrollUser (`POST /enrollments`), getAllEnrollments (`GET /enrollments`), getUserEnrollments (`GET /enrollments/my-enrollments`), getBatchRoster (`GET /enrollments/batch/:batchId`), updateEnrollmentStatus (`PATCH /enrollments/:id/status`).
+- Sprint 3 & 4 (Partial): Auto-checker and Trainee Dashboard.
+  - Backend: Real auto-checker implemented (`checkerService.js`). Clones student repo, injects standard `pom.xml` and trainer test suites, runs `mvn test`, and parses JUnit results.
+  - Frontend: Trainee Dashboard (`TraineeDashboard.jsx`) updated with polling (3s), optimistic updates, and dynamic stat cards.
+  - **Unresolved Issue**: Trainee Dashboard sometimes reverts to "not submitted yet" after a refresh or submission. High suspicion of ObjectId vs String key mismatch in the `submissions` state map or race conditions during state reconciliation.
+

@@ -24,8 +24,22 @@ export default function TraineeDashboard() {
     fetchDashboardData();
   }, []);
 
-  const fetchDashboardData = async () => {
-    setLoading(true);
+  // Auto-poll silently if any submission is currently queued or checking
+  useEffect(() => {
+    const hasPending = Object.values(submissions).some(
+      (sub) => sub.status === 'queued' || sub.status === 'checking'
+    );
+    if (!hasPending) return;
+
+    const interval = setInterval(() => {
+      fetchDashboardData(true);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [submissions]);
+
+  const fetchDashboardData = async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
     setError('');
     try {
       const enrollRes = await api.getMyEnrollments();
@@ -55,8 +69,9 @@ export default function TraineeDashboard() {
           const subList = Array.isArray(submissionsRes) ? submissionsRes : submissionsRes?.submissions || [];
           const subMap = {};
           subList.forEach((sub) => {
-            const actId = sub.activity?._id || sub.activity;
-            if (actId) subMap[actId] = sub;
+            const actId = sub.activity?._id ? sub.activity._id.toString() : (sub.activity ? sub.activity.toString() : null);
+            // Since subList is sorted by attemptNo DESC, only take the first (latest) attempt!
+            if (actId && !subMap[actId]) subMap[actId] = sub;
           });
           setSubmissions(subMap);
         }
@@ -65,7 +80,7 @@ export default function TraineeDashboard() {
       console.error('Error loading dashboard:', err);
       setError('Failed to load dashboard data.');
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   };
 
@@ -73,26 +88,33 @@ export default function TraineeDashboard() {
     setGithubUrls((prev) => ({ ...prev, [activityId]: value }));
   };
 
-  const handleSubmit = async (activityId) => {
+  const handleSubmit = async (e, activityId) => {
+    if (e) e.preventDefault();
     const url = githubUrls[activityId];
     if (!url || !url.trim()) return;
 
     setSubmittingId(activityId);
+
+    // Optimistic UI update
+    setSubmissions(prev => ({
+      ...prev,
+      [activityId]: { ...prev[activityId], status: 'checking', githubUrl: url.trim() }
+    }));
+
     try {
-      const res = await api.submitActivity(activityId, url.trim());
-      if (res.submission || res._id) {
-        const newSub = res.submission || res;
-        setSubmissions((prev) => ({ ...prev, [activityId]: newSub }));
-      } else {
-        alert(res.message || 'Submission failed.');
-      }
+      await api.submitActivity(activityId, url.trim());
     } catch (err) {
       console.error(err);
       alert('Error submitting activity URL.');
+      fetchDashboardData();
     } finally {
       setSubmittingId(null);
     }
   };
+
+  const passedCount = Object.values(submissions).filter((s) => s.status === 'passed').length;
+  const totalActivities = sessions.filter((s) => s.activity).length;
+  const pendingCount = totalActivities - passedCount;
 
   if (loading) {
     return (
@@ -127,7 +149,7 @@ export default function TraineeDashboard() {
       <div className="row g-3 mb-4">
         <div className="col-md-3">
           <div className="bg-white p-4 rounded-3 border h-100 shadow-sm">
-            <h1 className="fw-bold mb-1" style={{ color: '#16a34a' }}>2 / 12</h1>
+            <h1 className="fw-bold mb-1" style={{ color: '#16a34a' }}>{passedCount} / {totalActivities}</h1>
             <div className="text-muted small">Activities passed</div>
           </div>
         </div>
@@ -139,7 +161,7 @@ export default function TraineeDashboard() {
         </div>
         <div className="col-md-3">
           <div className="bg-white p-4 rounded-3 border h-100 shadow-sm">
-            <h1 className="fw-bold mb-1" style={{ color: '#d97706' }}>3</h1>
+            <h1 className="fw-bold mb-1" style={{ color: '#d97706' }}>{pendingCount}</h1>
             <div className="text-muted small">Pending activities</div>
           </div>
         </div>
@@ -167,7 +189,7 @@ export default function TraineeDashboard() {
       {/* Sessions List Container */}
       <div className="bg-kodigo-navy text-white p-3 rounded-top d-flex justify-content-between align-items-center mb-0">
         <h6 className="mb-0 fw-bold">{selectedBatch?.name || 'Batch'} · {selectedBatch?.programTitle || 'Java'} Fundamentals - {sessions.length} Sessions</h6>
-        <span className="small">2 / {sessions.length} passed</span>
+        <span className="small">{passedCount} / {totalActivities} passed</span>
       </div>
 
       <div className="bg-white border rounded-bottom border-top-0 mb-4 overflow-hidden">
@@ -176,7 +198,8 @@ export default function TraineeDashboard() {
         ) : (
           sessions.map((session, index) => {
             const activity = session.activity;
-            const submission = activity ? submissions[activity._id] : null;
+            const actIdKey = activity ? (activity._id?.toString() || activity.toString()) : null;
+            const submission = actIdKey ? submissions[actIdKey] : null;
             const status = submission?.status || 'not submitted';
 
             return (
@@ -238,7 +261,7 @@ export default function TraineeDashboard() {
                             />
                             <button
                               className="btn btn-primary px-3"
-                              onClick={() => handleSubmit(activity._id)}
+                              onClick={(e) => handleSubmit(e, activity._id)}
                               disabled={submittingId === activity._id || !githubUrls[activity._id]}
                             >
                               Submit
@@ -246,7 +269,31 @@ export default function TraineeDashboard() {
                           </div>
                         )}
                         {submission?.githubUrl && (
-                          <button className="btn btn-outline-secondary btn-sm px-3 py-1" style={{ fontSize: '0.7rem' }}>Resubmit</button>
+                          <button
+                            className="btn btn-outline-secondary btn-sm px-3 py-1"
+                            style={{ fontSize: '0.7rem' }}
+                            disabled={submittingId === activity._id}
+                            onClick={async () => {
+                              setSubmittingId(activity._id);
+                              try {
+                                const res = await api.recheckSubmission(submission._id);
+                                if (res.message) {
+                                  // Optimistically update status to checking
+                                  setSubmissions((prev) => ({
+                                    ...prev,
+                                    [activity._id]: { ...submission, status: 'checking' }
+                                  }));
+                                }
+                              } catch (err) {
+                                console.error(err);
+                                alert('Failed to queue resubmission.');
+                              } finally {
+                                setSubmittingId(null);
+                              }
+                            }}
+                          >
+                            {submittingId === activity._id ? 'Re-checking...' : 'Resubmit'}
+                          </button>
                         )}
                       </div>
                       {submission && (
@@ -266,7 +313,10 @@ export default function TraineeDashboard() {
       {activeTestSubmissionId && (
         <TestResultModal
           submissionId={activeTestSubmissionId}
-          onClose={() => setActiveTestSubmissionId(null)}
+          onClose={() => {
+            setActiveTestSubmissionId(null);
+            fetchDashboardData();
+          }}
         />
       )}
 
