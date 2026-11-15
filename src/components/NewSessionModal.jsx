@@ -11,6 +11,7 @@ export default function NewSessionModal({ batchId, onClose, onSuccess }) {
   const [hasActivity, setHasActivity] = useState(true);
   const [activityTitle, setActivityTitle] = useState('');
   const [activityType, setActivityType] = useState('activity');
+  const [testSuitePath, setTestSuitePath] = useState('');
   const [instructions, setInstructions] = useState('');
   const [dueAt, setDueAt] = useState('');
 
@@ -46,6 +47,7 @@ export default function NewSessionModal({ batchId, onClose, onSuccess }) {
           session: sessionId,
           title: activityTitle.trim() || title.trim(),
           type: activityType,
+          testSuite: testSuitePath.trim(),
           instructions: instructions.trim(),
           dueAt: dueAt ? new Date(dueAt) : undefined
         });
@@ -98,7 +100,7 @@ export default function NewSessionModal({ batchId, onClose, onSuccess }) {
                   />
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label small fw-bold">Order / Sequence #</label>
+                  <label className="form-label small fw-bold">Order / Sequence # *</label>
                   <input
                     type="number"
                     className="form-control"
@@ -158,6 +160,17 @@ export default function NewSessionModal({ batchId, onClose, onSuccess }) {
                       <option value="capstone">Capstone</option>
                       <option value="exam">Exam</option>
                     </select>
+                  </div>
+                  <div className="col-md-12">
+                    <label className="form-label small fw-bold">Test Suite Path *</label>
+                    <input
+                      type="text"
+                      className="form-control font-monospace"
+                      placeholder="e.g. src/test/java/com/joysistvi/s05/activity/"
+                      value={testSuitePath}
+                      onChange={(e) => setTestSuitePath(e.target.value)}
+                      required
+                    />
                   </div>
                   <div className="col-md-12">
                     <label className="form-label small fw-bold">Instructions (Markdown)</label>

@@ -91,6 +91,40 @@ export const api = {
     return res.json();
   },
 
+  updateSession: async (sessionId, data) => {
+    const res = await fetch(`${API_URL}/sessions/${sessionId}`, {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
+  deleteSession: async (sessionId) => {
+    const res = await fetch(`${API_URL}/sessions/${sessionId}`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    });
+    return res.json();
+  },
+
+  updateActivity: async (activityId, data) => {
+    const res = await fetch(`${API_URL}/activities/${activityId}`, {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
+  deleteActivity: async (activityId) => {
+    const res = await fetch(`${API_URL}/activities/${activityId}`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    });
+    return res.json();
+  },
+
   // Submissions
   submitActivity: async (activityId, githubUrl) => {
     const res = await fetch(`${API_URL}/submissions`, {

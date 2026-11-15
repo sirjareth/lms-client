@@ -4,6 +4,7 @@ import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import TestResultModal from '../components/TestResultModal';
 import NewSessionModal from '../components/NewSessionModal';
+import EditSessionModal from '../components/EditSessionModal';
 
 export default function TrainerDashboard() {
   const { user } = useAuth();
@@ -13,6 +14,7 @@ export default function TrainerDashboard() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showNewSessionModal, setShowNewSessionModal] = useState(false);
+  const [editingSession, setEditingSession] = useState(null);
   const [activeTestSubmissionId, setActiveTestSubmissionId] = useState(null);
 
   useEffect(() => {
@@ -125,7 +127,7 @@ export default function TrainerDashboard() {
                   <td className="text-end px-4">
                     <div className="d-flex justify-content-end gap-2">
                       <button className="btn btn-outline-primary btn-sm px-3">Submissions</button>
-                      <button className="btn btn-outline-secondary btn-sm px-3">Edit</button>
+                      <button className="btn btn-outline-secondary btn-sm px-3" onClick={() => setEditingSession(session)}>Edit</button>
                     </div>
                   </td>
                 </tr>
@@ -141,6 +143,17 @@ export default function TrainerDashboard() {
           onClose={() => setShowNewSessionModal(false)}
           onSuccess={() => {
             setShowNewSessionModal(false);
+            fetchBatchDetails(selectedBatchId);
+          }}
+        />
+      )}
+
+      {editingSession && (
+        <EditSessionModal
+          session={editingSession}
+          onClose={() => setEditingSession(null)}
+          onSuccess={() => {
+            setEditingSession(null);
             fetchBatchDetails(selectedBatchId);
           }}
         />

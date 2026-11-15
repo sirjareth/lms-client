@@ -15,6 +15,7 @@ export default function TraineeDashboard() {
   const [githubUrls, setGithubUrls] = useState({});
   const [loading, setLoading] = useState(true);
   const [submittingId, setSubmittingId] = useState(null);
+  const [editingUrlId, setEditingUrlId] = useState(null);
   const [error, setError] = useState('');
 
   const [activeTestSubmissionId, setActiveTestSubmissionId] = useState(null);
@@ -88,6 +89,15 @@ export default function TraineeDashboard() {
     setGithubUrls((prev) => ({ ...prev, [activityId]: value }));
   };
 
+  const handleEditClick = (activityId, currentUrl) => {
+    setGithubUrls((prev) => ({ ...prev, [activityId]: currentUrl }));
+    setEditingUrlId(activityId);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingUrlId(null);
+  };
+
   const handleSubmit = async (e, activityId) => {
     if (e) e.preventDefault();
     const url = githubUrls[activityId];
@@ -103,6 +113,7 @@ export default function TraineeDashboard() {
 
     try {
       await api.submitActivity(activityId, url.trim());
+      setEditingUrlId(null);
     } catch (err) {
       console.error(err);
       alert('Error submitting activity URL.');
@@ -246,10 +257,15 @@ export default function TraineeDashboard() {
                   {activity && (
                     <div className="mt-2 pt-1 border-top border-light">
                       <div className="d-flex align-items-center gap-2 mb-1">
-                        {submission?.githubUrl ? (
-                          <a href={submission.githubUrl} target="_blank" rel="noreferrer" className="text-primary small text-decoration-none text-truncate" style={{ maxWidth: '400px' }}>
-                            {submission.githubUrl}
-                          </a>
+                        {submission?.githubUrl && editingUrlId !== activity._id ? (
+                          <div className="d-flex align-items-center gap-2">
+                             <a href={submission.githubUrl} target="_blank" rel="noreferrer" className="text-primary small text-decoration-none text-truncate" style={{ maxWidth: '400px' }}>
+                              {submission.githubUrl}
+                            </a>
+                            <button className="btn btn-link btn-sm p-0 text-secondary" onClick={() => handleEditClick(activity._id, submission.githubUrl)}>
+                              <i className="bi bi-pencil-fill"></i>
+                            </button>
+                          </div>
                         ) : (
                           <div className="input-group input-group-sm" style={{ maxWidth: '450px' }}>
                             <input
@@ -259,16 +275,19 @@ export default function TraineeDashboard() {
                               value={githubUrls[activity._id] || ''}
                               onChange={(e) => handleUrlChange(activity._id, e.target.value)}
                             />
+                            {editingUrlId === activity._id && (
+                                <button className="btn btn-outline-secondary px-2" onClick={handleCancelEdit}>Cancel</button>
+                            )}
                             <button
                               className="btn btn-primary px-3"
                               onClick={(e) => handleSubmit(e, activity._id)}
                               disabled={submittingId === activity._id || !githubUrls[activity._id]}
                             >
-                              Submit
+                              {editingUrlId === activity._id ? 'Update' : 'Submit'}
                             </button>
                           </div>
                         )}
-                        {submission?.githubUrl && (
+                        {submission?.githubUrl && editingUrlId !== activity._id && (
                           <button
                             className="btn btn-outline-secondary btn-sm px-3 py-1"
                             style={{ fontSize: '0.7rem' }}
