@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import TestResultModal from '../components/TestResultModal';
 import NewSessionModal from '../components/NewSessionModal';
 import EditSessionModal from '../components/EditSessionModal';
+import SubmissionsModal from '../components/SubmissionsModal';
 
 export default function TrainerDashboard() {
   const { user } = useAuth();
@@ -15,6 +16,7 @@ export default function TrainerDashboard() {
   const [loading, setLoading] = useState(true);
   const [showNewSessionModal, setShowNewSessionModal] = useState(false);
   const [editingSession, setEditingSession] = useState(null);
+  const [viewingSubmissions, setViewingSubmissions] = useState(null);
   const [activeTestSubmissionId, setActiveTestSubmissionId] = useState(null);
 
   useEffect(() => {
@@ -126,7 +128,11 @@ export default function TrainerDashboard() {
                   </td>
                   <td className="text-end px-4">
                     <div className="d-flex justify-content-end gap-2">
-                      <button className="btn btn-outline-primary btn-sm px-3">Submissions</button>
+                      {session.activity ? (
+                          <button className="btn btn-outline-primary btn-sm px-3" onClick={() => setViewingSubmissions(session.activity._id)}>Submissions</button>
+                      ) : (
+                          <button className="btn btn-outline-primary btn-sm px-3" disabled>No Activity</button>
+                      )}
                       <button className="btn btn-outline-secondary btn-sm px-3" onClick={() => setEditingSession(session)}>Edit</button>
                     </div>
                   </td>
@@ -156,6 +162,13 @@ export default function TrainerDashboard() {
             setEditingSession(null);
             fetchBatchDetails(selectedBatchId);
           }}
+        />
+      )}
+
+      {viewingSubmissions && (
+        <SubmissionsModal
+          activityId={viewingSubmissions}
+          onClose={() => setViewingSubmissions(null)}
         />
       )}
     </div>

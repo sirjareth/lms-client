@@ -12,7 +12,7 @@ export default function SubmissionsModal({ activityId, onClose }) {
   const fetchSubmissions = async () => {
     setLoading(true);
     try {
-      const res = await api.getBatchRoster(activityId); // Need API endpoint for activity roster
+      const res = await api.getActivitySubmissions(activityId);
       setSubmissions(Array.isArray(res) ? res : []);
     } catch (err) {
       console.error(err);

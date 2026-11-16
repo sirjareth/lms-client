@@ -203,13 +203,15 @@ export default function EditSessionModal({ session, onClose, onSuccess }) {
                     />
                   </div>
                   <div className="col-md-12">
-                    <label className="form-label small fw-bold">Instructions (Markdown)</label>
-                    <textarea
+                    <label className="form-label small fw-bold">Instructions URL *</label>
+                    <input
+                      type="url"
                       className="form-control"
-                      rows="3"
+                      placeholder="Paste GitHub Markdown URL here"
                       value={instructions}
                       onChange={(e) => setInstructions(e.target.value)}
-                    ></textarea>
+                      required
+                    />
                   </div>
                   {session.activity?._id && (
                     <div className="col-12 mt-2">

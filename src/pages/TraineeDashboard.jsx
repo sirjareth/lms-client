@@ -243,7 +243,10 @@ export default function TraineeDashboard() {
                       </h6>
                       {activity && activity.title && (
                         <div className="text-secondary small fw-semibold">
-                          Activity: {activity.title}
+                          Activity:
+                          <a href={activity.instructions} target="_blank" rel="noreferrer" className="ms-1 text-primary text-decoration-underline">
+                            {activity.title}
+                          </a>
                         </div>
                       )}
                     </div>

@@ -142,6 +142,13 @@ export const api = {
     return res.json();
   },
 
+  getActivitySubmissions: async (activityId) => {
+    const res = await fetch(`${API_URL}/submissions/activity/${activityId}`, {
+      headers: getHeaders(),
+    });
+    return res.json();
+  },
+
   getCheckResult: async (submissionId) => {
     const res = await fetch(`${API_URL}/submissions/${submissionId}/result`, {
       headers: getHeaders(),
