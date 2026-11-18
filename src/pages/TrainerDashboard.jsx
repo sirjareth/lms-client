@@ -6,6 +6,22 @@ import TestResultModal from '../components/TestResultModal';
 import NewSessionModal from '../components/NewSessionModal';
 import EditSessionModal from '../components/EditSessionModal';
 import SubmissionsModal from '../components/SubmissionsModal';
+import { SortableSessionRow } from '../components/SortableSessionRow';
+
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 
 export default function TrainerDashboard() {
   const { user } = useAuth();
@@ -17,7 +33,13 @@ export default function TrainerDashboard() {
   const [showNewSessionModal, setShowNewSessionModal] = useState(false);
   const [editingSession, setEditingSession] = useState(null);
   const [viewingSubmissions, setViewingSubmissions] = useState(null);
-  const [activeTestSubmissionId, setActiveTestSubmissionId] = useState(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     fetchInitialData();
@@ -48,7 +70,6 @@ export default function TrainerDashboard() {
       const sessionsRes = await api.getSessionsByBatch(batchId);
       setSessions(Array.isArray(sessionsRes) ? sessionsRes : sessionsRes.sessions || []);
 
-      // Update sidebar when trainer selects a batch
       const selectedBatch = batches.find(b => b._id === batchId);
       if (selectedBatch) {
         setActiveBatch(selectedBatch);
@@ -62,6 +83,35 @@ export default function TrainerDashboard() {
     const batchId = e.target.value;
     setSelectedBatchId(batchId);
     fetchBatchDetails(batchId);
+  };
+
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const activeIdStr = active.id.toString();
+      const overIdStr = over.id.toString();
+
+      setSessions((items) => {
+        const oldIndex = items.findIndex((item) => item._id.toString() === activeIdStr);
+        const newIndex = items.findIndex((item) => item._id.toString() === overIdStr);
+
+        if (oldIndex === -1 || newIndex === -1) return items;
+
+        const newItems = arrayMove(items, oldIndex, newIndex);
+
+        // Update Backend
+        const sessionIds = newItems.map((item) => item._id);
+        api.reorderSessions(selectedBatchId, sessionIds)
+          .then(() => console.log("Reorder saved successfully"))
+          .catch((err) => {
+             console.error("Failed to reorder:", err);
+             fetchBatchDetails(selectedBatchId); // Revert
+          });
+
+        return [...newItems];
+      });
+    }
   };
 
   if (loading) return <div className="p-5 text-center"><div className="spinner-border text-primary"></div></div>;
@@ -99,48 +149,38 @@ export default function TrainerDashboard() {
       </div>
 
       <div className="bg-white border rounded-bottom border-top-0 mb-4 overflow-hidden">
-        <table className="table align-middle mb-0">
-          <thead className="table-light border-bottom">
-            <tr className="small text-muted text-uppercase">
-              <th className="py-3 px-4">Session / Activity</th>
-              <th>Submitted</th>
-              <th>Passed</th>
-              <th>Failed</th>
-              <th style={{ width: '200px' }}>Pass rate</th>
-              <th className="text-end px-4">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sessions.length === 0 ? (
-              <tr><td colSpan="6" className="text-center py-5 text-muted">No sessions for this batch.</td></tr>
-            ) : (
-              sessions.map((session) => (
-                <tr key={session._id}>
-                  <td className="px-4 fw-bold" style={{ color: '#0f172a' }}>{session.code} {session.title}</td>
-                  <td>25 / 25</td>
-                  <td className="text-success fw-semibold">24</td>
-                  <td className="text-danger fw-semibold">1</td>
-                  <td>
-                    <div className="d-flex align-items-center gap-2">
-                      <div className="progress flex-grow-1" style={{ height: '8px' }}><div className="progress-bar bg-primary" style={{ width: '96%' }}></div></div>
-                      <span className="small fw-bold">96%</span>
-                    </div>
-                  </td>
-                  <td className="text-end px-4">
-                    <div className="d-flex justify-content-end gap-2">
-                      {session.activity ? (
-                          <button className="btn btn-outline-primary btn-sm px-3" onClick={() => setViewingSubmissions(session.activity._id)}>Submissions</button>
-                      ) : (
-                          <button className="btn btn-outline-primary btn-sm px-3" disabled>No Activity</button>
-                      )}
-                      <button className="btn btn-outline-secondary btn-sm px-3" onClick={() => setEditingSession(session)}>Edit</button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="table-light border-bottom d-flex align-items-center p-3 small text-muted text-uppercase fw-bold">
+            <div className="px-2" style={{ flex: '2' }}>Session / Activity</div>
+            <div style={{ flex: '1' }}>Submitted</div>
+            <div style={{ flex: '1' }}>Passed</div>
+            <div style={{ flex: '1' }}>Failed</div>
+            <div style={{ flex: '1.5' }}>Pass rate</div>
+            <div className="text-end px-2" style={{ flex: '1.5' }}>Actions</div>
+          </div>
+
+          {sessions.length === 0 ? (
+            <div className="p-5 text-center text-muted">No sessions for this batch.</div>
+          ) : (
+            <SortableContext
+              items={sessions.map((s) => (s._id ? s._id.toString() : s.id))}
+              strategy={verticalListSortingStrategy}
+            >
+              {sessions.map((session) => (
+                <SortableSessionRow
+                  key={session._id}
+                  session={session}
+                  onEdit={setEditingSession}
+                  onViewSubmissions={setViewingSubmissions}
+                />
+              ))}
+            </SortableContext>
+          )}
+        </DndContext>
       </div>
 
       {showNewSessionModal && (

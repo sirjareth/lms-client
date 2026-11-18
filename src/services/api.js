@@ -100,6 +100,15 @@ export const api = {
     return res.json();
   },
 
+  reorderSessions: async (batchId, sessionIds) => {
+    const res = await fetch(`${API_URL}/sessions/batch/${batchId}/reorder`, {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify({ sessionIds }),
+    });
+    return res.json();
+  },
+
   deleteSession: async (sessionId) => {
     const res = await fetch(`${API_URL}/sessions/${sessionId}`, {
       method: 'DELETE',

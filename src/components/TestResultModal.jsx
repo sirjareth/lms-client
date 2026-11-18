@@ -72,8 +72,18 @@ export default function TestResultModal({ submissionId, onClose }) {
 
                 {result.errorType && (
                   <div className="alert alert-danger mb-4">
-                    <strong>Error Type:</strong> {result.errorType}
-                    <pre className="mt-2 mb-0 small bg-white p-2 border rounded">{result.outputLog}</pre>
+                    <div className="d-flex align-items-center gap-2 mb-2">
+                        <i className="bi bi-exclamation-triangle-fill"></i>
+                        <strong className="text-uppercase">{result.errorType === 'compile' ? 'Compilation Failed' : 'Runtime Error'}</strong>
+                    </div>
+                    <div className="bg-dark text-warning p-3 rounded border border-warning border-opacity-50 overflow-auto" style={{ maxHeight: '400px' }}>
+                        <pre className="mb-0 small font-monospace" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                            {result.outputLog || 'No error details provided.'}
+                        </pre>
+                    </div>
+                    <div className="mt-2 small text-muted italic">
+                        Tip: Check your class name, package declaration, and syntax.
+                    </div>
                   </div>
                 )}
 
