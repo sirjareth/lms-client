@@ -1,8 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
 import { api } from '../services/api';
-import { useAuth } from '../context/AuthContext';
-import TestResultModal from '../components/TestResultModal';
 import NewSessionModal from '../components/NewSessionModal';
 import EditSessionModal from '../components/EditSessionModal';
 import SubmissionsModal from '../components/SubmissionsModal';
@@ -24,10 +21,9 @@ import {
 } from '@dnd-kit/sortable';
 
 export default function TrainerDashboard() {
-  const { user } = useAuth();
-  const { setActiveBatch } = useOutletContext();
   const [batches, setBatches] = useState([]);
   const [selectedBatchId, setSelectedBatchId] = useState('');
+  const [dashboardData, setDashboardData] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showNewSessionModal, setShowNewSessionModal] = useState(false);
@@ -67,13 +63,16 @@ export default function TrainerDashboard() {
   const fetchBatchDetails = async (batchId) => {
     if (!batchId) return;
     try {
-      const sessionsRes = await api.getSessionsByBatch(batchId);
-      setSessions(Array.isArray(sessionsRes) ? sessionsRes : sessionsRes.sessions || []);
+      const res = await api.getTrainerDashboardData(batchId);
+      setDashboardData(res);
+      // The API returns each item as { session, activity, stats }, while the
+      // row component expects the session fields at the top level.
+      setSessions((res.sessionStats || []).map(({ session, activity, ...stats }) => ({
+        ...session,
+        ...stats,
+        activity: activity ? { ...activity, _id: activity._id || activity.id } : null,
+      })));
 
-      const selectedBatch = batches.find(b => b._id === batchId);
-      if (selectedBatch) {
-        setActiveBatch(selectedBatch);
-      }
     } catch (err) {
       console.error(err);
     }
@@ -133,15 +132,43 @@ export default function TrainerDashboard() {
           style={{ backgroundColor: '#2563eb', borderColor: '#2563eb' }}
           onClick={() => setShowNewSessionModal(true)}
         >
-          <i className="bi bi-plus-lg me-1"></i> + New Session & Activity
+          <i className="bi bi-plus-lg me-1"></i> New Session & Activity
         </button>
       </div>
 
       <div className="row g-3 mb-4">
-        <div className="col-md-3"><div className="bg-white p-4 rounded-3 border shadow-sm"><h2 className="fw-bold mb-1" style={{ color: '#0f172a' }}>25</h2><div className="text-muted small">Students</div></div></div>
-        <div className="col-md-3"><div className="bg-white p-4 rounded-3 border shadow-sm"><h2 className="fw-bold mb-1" style={{ color: '#d97706' }}>2</h2><div className="text-muted small">Checking now</div></div></div>
-        <div className="col-md-3"><div className="bg-white p-4 rounded-3 border shadow-sm"><h2 className="fw-bold mb-1" style={{ color: '#dc2626' }}>20</h2><div className="text-muted small">Failed attempts</div></div></div>
-        <div className="col-md-3"><div className="bg-white p-4 rounded-3 border shadow-sm"><h2 className="fw-bold mb-1" style={{ color: '#16a34a' }}>79%</h2><div className="text-muted small">Avg pass rate</div></div></div>
+        <div className="col-md-3">
+          <div className="bg-white p-4 rounded-3 border shadow-sm">
+            <h2 className="fw-bold mb-1" style={{ color: '#0f172a' }}>
+              {dashboardData?.summary?.totalStudents || 0}
+            </h2>
+            <div className="text-muted small">Students</div>
+          </div>
+        </div>
+        <div className="col-md-3">
+          <div className="bg-white p-4 rounded-3 border shadow-sm">
+            <h2 className="fw-bold mb-1" style={{ color: '#d97706' }}>
+              {dashboardData?.summary?.checkingNow || 0}
+            </h2>
+            <div className="text-muted small">Checking now</div>
+          </div>
+        </div>
+        <div className="col-md-3">
+          <div className="bg-white p-4 rounded-3 border shadow-sm">
+            <h2 className="fw-bold mb-1" style={{ color: '#dc2626' }}>
+              {dashboardData?.summary?.failedAttemptsTotal || 0}
+            </h2>
+            <div className="text-muted small">Failed attempts</div>
+          </div>
+        </div>
+        <div className="col-md-3">
+          <div className="bg-white p-4 rounded-3 border shadow-sm">
+            <h2 className="fw-bold mb-1" style={{ color: '#16a34a' }}>
+              {dashboardData?.summary?.avgPassRateBatch || 0}%
+            </h2>
+            <div className="text-muted small">Avg pass rate</div>
+          </div>
+        </div>
       </div>
 
       <div className="bg-kodigo-navy text-white p-3 rounded-top d-flex justify-content-between align-items-center mb-0">
@@ -167,7 +194,7 @@ export default function TrainerDashboard() {
             <div className="p-5 text-center text-muted">No sessions for this batch.</div>
           ) : (
             <SortableContext
-              items={sessions.map((s) => (s._id ? s._id.toString() : s.id))}
+              items={sessions.map((session) => session._id.toString())}
               strategy={verticalListSortingStrategy}
             >
               {sessions.map((session) => (

@@ -116,3 +116,45 @@ body {
   border-radius: 12px;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
 }
+
+.trainee-session-row {
+  display: grid;
+  grid-template-columns: minmax(105px, 0.55fr) minmax(220px, 1.4fr) minmax(300px, 2fr) minmax(180px, 1fr);
+  grid-template-areas: "status details submission meta";
+  align-items: center;
+  gap: 12px 18px;
+  padding: 20px 16px;
+}
+
+.trainee-session-content,
+.trainee-session-heading {
+  display: contents;
+}
+
+.trainee-session-status { grid-area: status; }
+.trainee-session-details { grid-area: details; min-width: 0; }
+.trainee-session-submission { grid-area: submission; min-width: 0; }
+.trainee-session-meta { grid-area: meta; }
+
+@media (max-width: 1200px) {
+  .trainee-session-row {
+    grid-template-columns: 110px minmax(0, 1fr);
+    grid-template-areas:
+      "status details"
+      "status submission"
+      "status meta";
+  }
+
+  .trainee-session-meta { text-align: left !important; }
+}
+
+@media (max-width: 576px) {
+  .trainee-session-row {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "status"
+      "details"
+      "submission"
+      "meta";
+  }
+}

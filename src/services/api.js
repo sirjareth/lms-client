@@ -65,6 +65,14 @@ export const api = {
     return res.json();
   },
 
+  // Dashboard
+  getTrainerDashboardData: async (batchId) => {
+    const res = await fetch(`${API_URL}/dashboard/batch/${batchId}/trainer`, {
+      headers: getHeaders(),
+    });
+    return res.json();
+  },
+
   // Sessions & Activities
   getSessionsByBatch: async (batchId) => {
     const res = await fetch(`${API_URL}/sessions/batch/${batchId}`, {

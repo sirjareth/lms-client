@@ -1,15 +1,8 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-export default function Sidebar({ batch }) {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
+export default function Sidebar() {
+  const { user } = useAuth();
   return (
     <div
       className="d-flex flex-column p-3 text-white"
@@ -22,22 +15,7 @@ export default function Sidebar({ batch }) {
     >
       {/* Brand / Logo */}
       <div className="d-flex align-items-center mb-4 px-2 pt-2">
-        <h4 className="fw-bold mb-0 text-white" style={{ letterSpacing: '0.5px' }}>Kodigo</h4>
-      </div>
-
-      {/* Batch Header info (Dynamic) */}
-      <div className="mb-4 px-2 pb-3 border-bottom border-secondary">
-        <h3 className="fw-bold fs-4 mb-1 text-white">{batch?.name || 'Classroom'}</h3>
-        <p className="text-uppercase small mb-2" style={{ fontSize: '0.7rem', color: '#94a3b8', letterSpacing: '0.5px' }}>
-          {batch?.programTitle || 'Java Backend Development'}
-        </p>
-        <p className="small mb-1 text-white-50" style={{ fontSize: '0.85rem' }}>
-          {batch?.mode || 'Online Class'}
-        </p>
-        <p className="small mb-0 text-white-50" style={{ fontSize: '0.85rem' }}>
-          Instructors <br />
-          <strong className="text-white">Jareth Ronquillo</strong>
-        </p>
+        <h4 className="fw-bold mb-0 text-white" style={{ letterSpacing: '0.5px' }}>CodeGo</h4>
       </div>
 
       {/* Navigation Section */}
@@ -67,16 +45,6 @@ export default function Sidebar({ batch }) {
         </li>
       </ul>
 
-      {/* User Footer */}
-      <div className="mt-auto pt-3 border-top border-secondary d-flex justify-content-between align-items-center px-2">
-        <div className="small text-truncate" style={{ maxWidth: '170px' }}>
-          <div className="fw-bold text-white">{user?.name || user?.firstName || 'User'}</div>
-          <div className="text-muted" style={{ fontSize: '0.75rem' }}>{user?.email || ''}</div>
-        </div>
-        <button className="btn btn-sm btn-outline-light" onClick={handleLogout} title="Logout">
-          <i className="bi bi-box-arrow-right"></i>
-        </button>
-      </div>
     </div>
   );
 }

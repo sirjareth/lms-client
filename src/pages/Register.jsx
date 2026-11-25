@@ -61,7 +61,7 @@ export default function Register() {
           <div className="card kodigo-card p-4 shadow-lg border-0">
             <div className="text-center mb-4">
               <h2 className="fw-bold text-kodigo-navy">Create Account</h2>
-              <p className="text-muted small">Join Kodigo LMS as a trainee</p>
+              <p className="text-muted small">Join CodeGo LMS as a trainee</p>
             </div>
 
             {error && <div className="alert alert-danger py-2 small" role="alert">{error}</div>}

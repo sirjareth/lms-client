@@ -49,7 +49,7 @@ export default function Login() {
               <div className="bg-kodigo-navy text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style={{ width: '64px', height: '64px' }}>
                 <i className="bi bi-code-slash fs-2 text-kodigo-blue"></i>
               </div>
-              <h2 className="fw-bold text-kodigo-navy">Kodigo LMS</h2>
+              <h2 className="fw-bold text-kodigo-navy">CodeGo LMS</h2>
               <p className="text-muted small">Sign in to your training portal</p>
             </div>
 

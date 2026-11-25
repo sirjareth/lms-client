@@ -44,16 +44,16 @@ export function SortableSessionRow({ session, onEdit, onViewSubmissions }) {
         </div>
       </div>
 
-      <div style={{ flex: '1' }}>25 / 25</div>
-      <div className="text-success fw-semibold" style={{ flex: '1' }}>24</div>
-      <div className="text-danger fw-semibold" style={{ flex: '1' }}>1</div>
+      <div style={{ flex: '1' }}>{session.stats?.submitted ?? 0}</div>
+      <div className="text-success fw-semibold" style={{ flex: '1' }}>{session.stats?.passed ?? 0}</div>
+      <div className="text-danger fw-semibold" style={{ flex: '1' }}>{session.stats?.failed ?? 0}</div>
 
       <div style={{ flex: '1.5' }}>
         <div className="d-flex align-items-center gap-2">
           <div className="progress flex-grow-1" style={{ height: '8px' }}>
-            <div className="progress-bar bg-primary" style={{ width: '96%' }}></div>
+            <div className="progress-bar bg-primary" style={{ width: `${session.stats?.passRateNum ?? 0}%` }}></div>
           </div>
-          <span className="small fw-bold">96%</span>
+          <span className="small fw-bold">{session.stats?.passRate ?? '0%'}</span>
         </div>
       </div>
 

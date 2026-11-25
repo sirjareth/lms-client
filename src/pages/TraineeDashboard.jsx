@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import TestResultModal from '../components/TestResultModal';
@@ -7,7 +6,6 @@ import SessionFeedbackModal from '../components/SessionFeedbackModal';
 
 export default function TraineeDashboard() {
   const { user } = useAuth();
-  const { setActiveBatch } = useOutletContext() || {};
   const [enrollments, setEnrollments] = useState([]);
   const [selectedBatch, setSelectedBatch] = useState(null);
   const [sessions, setSessions] = useState([]);
@@ -55,7 +53,6 @@ export default function TraineeDashboard() {
 
         if (batchObj) {
           setSelectedBatch(batchObj);
-          if (setActiveBatch) setActiveBatch(batchObj);
         }
 
         if (batchId) {
@@ -123,9 +120,18 @@ export default function TraineeDashboard() {
     }
   };
 
-  const passedCount = Object.values(submissions).filter((s) => s.status === 'passed').length;
-  const totalActivities = sessions.filter((s) => s.activity).length;
-  const pendingCount = totalActivities - passedCount;
+  const activities = sessions
+    .map((session) => session.activity)
+    .filter(Boolean);
+  const totalActivities = activities.length;
+  const passedCount = Math.min(
+    totalActivities,
+    activities.filter((activity) => {
+      const activityId = activity._id?.toString() || activity.toString();
+      return submissions[activityId]?.status === 'passed';
+    }).length
+  );
+  const pendingCount = Math.max(0, totalActivities - passedCount);
 
   if (loading) {
     return (
@@ -158,28 +164,22 @@ export default function TraineeDashboard() {
 
       {/* Stats Cards Row */}
       <div className="row g-3 mb-4">
-        <div className="col-md-3">
+        <div className="col-md-4">
           <div className="bg-white p-4 rounded-3 border h-100 shadow-sm">
             <h1 className="fw-bold mb-1" style={{ color: '#16a34a' }}>{passedCount} / {totalActivities}</h1>
             <div className="text-muted small">Activities passed</div>
           </div>
         </div>
-        <div className="col-md-3">
-          <div className="bg-white p-4 rounded-3 border h-100 shadow-sm">
-            <h1 className="fw-bold mb-1" style={{ color: '#2563eb' }}>92%</h1>
-            <div className="text-muted small">Attendance</div>
-          </div>
-        </div>
-        <div className="col-md-3">
+        <div className="col-md-4">
           <div className="bg-white p-4 rounded-3 border h-100 shadow-sm">
             <h1 className="fw-bold mb-1" style={{ color: '#d97706' }}>{pendingCount}</h1>
             <div className="text-muted small">Pending activities</div>
           </div>
         </div>
-        <div className="col-md-3">
+        <div className="col-md-4">
           <div className="bg-white p-4 rounded-3 border h-100 shadow-sm">
-            <h1 className="fw-bold mb-1" style={{ color: '#1e293b' }}>87</h1>
-            <div className="text-muted small">Overall grade</div>
+            <h1 className="fw-bold mb-1" style={{ color: '#2563eb' }}>92%</h1>
+            <div className="text-muted small">Attendance</div>
           </div>
         </div>
       </div>
@@ -214,8 +214,8 @@ export default function TraineeDashboard() {
             const status = submission?.status || 'not submitted';
 
             return (
-              <div key={session._id} className={`p-4 ${index !== sessions.length - 1 ? 'border-bottom' : ''} d-flex align-items-start gap-4`}>
-                <div style={{ width: '100px' }}>
+              <div key={session._id} className={`trainee-session-row ${index !== sessions.length - 1 ? 'border-bottom' : ''}`}>
+                <div className="trainee-session-status">
                   <div className={`text-uppercase fw-bold small mb-2 ${
                     status === 'passed' ? 'text-success' :
                     status === 'failed' ? 'text-danger' :
@@ -234,10 +234,10 @@ export default function TraineeDashboard() {
                   )}
                 </div>
 
-                <div className="flex-grow-1">
+                <div className="trainee-session-content">
                   {/* Session Header Title & Discussed Info */}
-                  <div className="d-flex justify-content-between align-items-start mb-2">
-                    <div>
+                  <div className="trainee-session-heading">
+                    <div className="trainee-session-details">
                       <h6 className="fw-bold mb-1" style={{ color: '#0f172a', fontSize: '1rem' }}>
                         {session.code} {session.title}
                       </h6>
@@ -250,19 +250,19 @@ export default function TraineeDashboard() {
                         </div>
                       )}
                     </div>
-                    <div className="text-end text-muted small">
+                    <div className="trainee-session-meta text-end text-muted small">
                       <div className="mb-1"><span className="me-1">●</span> Discussed on {session.discussedAt ? new Date(session.discussedAt).toLocaleDateString() : 'TBA'}</div>
-                      <a href="#feedback" className="text-primary text-decoration-none" onClick={(e) => { e.preventDefault(); setActiveFeedbackSession(session); }}>How was the session?</a>
+                      <a href="#feedback" className="text-primary text-decoration-none" onClick={(e) => { e.preventDefault(); setActiveFeedbackSession(session); }}>How was the activity?</a>
                     </div>
                   </div>
 
                   {/* Activity Submissions Area */}
                   {activity && (
-                    <div className="mt-2 pt-1 border-top border-light">
-                      <div className="d-flex align-items-center gap-2 mb-1">
+                    <div className="trainee-session-submission">
+                      <div className="d-flex align-items-center gap-2 mb-1 w-100">
                         {submission?.githubUrl && editingUrlId !== activity._id ? (
-                          <div className="d-flex align-items-center gap-2">
-                             <a href={submission.githubUrl} target="_blank" rel="noreferrer" className="text-primary small text-decoration-none text-truncate" style={{ maxWidth: '400px' }}>
+                          <div className="d-flex align-items-center gap-2 flex-shrink-1" style={{ minWidth: 0 }}>
+                             <a href={submission.githubUrl} target="_blank" rel="noreferrer" className="text-primary small text-decoration-none text-truncate" style={{ minWidth: 0 }}>
                               {submission.githubUrl}
                             </a>
                             <button className="btn btn-link btn-sm p-0 text-secondary" onClick={() => handleEditClick(activity._id, submission.githubUrl)}>
@@ -270,7 +270,7 @@ export default function TraineeDashboard() {
                             </button>
                           </div>
                         ) : (
-                          <div className="input-group input-group-sm" style={{ maxWidth: '450px' }}>
+                          <div className="input-group input-group-sm flex-grow-1" style={{ minWidth: '240px' }}>
                             <input
                               type="text"
                               className="form-control"
@@ -292,7 +292,7 @@ export default function TraineeDashboard() {
                         )}
                         {submission?.githubUrl && editingUrlId !== activity._id && (
                           <button
-                            className="btn btn-outline-secondary btn-sm px-3 py-1"
+                            className="btn btn-outline-secondary btn-sm px-3 py-1 flex-shrink-0"
                             style={{ fontSize: '0.7rem' }}
                             disabled={submittingId === activity._id}
                             onClick={async () => {
@@ -320,7 +320,7 @@ export default function TraineeDashboard() {
                       </div>
                       {submission && (
                         <div className="text-muted" style={{ fontSize: '0.75rem' }}>
-                          Graded by: {submission.gradedBy?.name || 'Kodigo auto-checker'} @ {new Date(submission.gradedAt || submission.submittedAt).toLocaleString()}
+                          Graded by: {submission.gradedBy?.name || 'CodeGo auto-checker'} @ {new Date(submission.gradedAt || submission.submittedAt).toLocaleString()}
                         </div>
                       )}
                     </div>

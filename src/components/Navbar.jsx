@@ -27,7 +27,7 @@ export default function Navbar() {
       <div className="container-fluid">
         <Link className="navbar-brand navbar-brand-kodigo d-flex align-items-center gap-2" to="/">
           <i className="bi bi-code-square text-kodigo-blue fs-4"></i>
-          <span><strong className="text-white">KODIGO</strong> <span className="text-white-50 fs-6">LMS</span></span>
+          <span><strong className="text-white">CODEGO</strong> <span className="text-white-50 fs-6">LMS</span></span>
         </Link>
 
         {user && (

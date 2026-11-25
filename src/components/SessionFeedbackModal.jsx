@@ -34,7 +34,7 @@ export default function SessionFeedbackModal({ session, onClose, onSuccess }) {
         <div className="modal-content kodigo-card border-0 shadow-lg">
           <div className="modal-header bg-kodigo-navy text-white">
             <h5 className="modal-title d-flex align-items-center gap-2">
-              <i className="bi bi-chat-heart text-kodigo-blue"></i> Session Feedback
+              <i className="bi bi-chat-heart text-kodigo-blue"></i> Activity Feedback
             </h5>
             <button type="button" className="btn-close btn-close-white" onClick={onClose}></button>
           </div>
@@ -42,7 +42,7 @@ export default function SessionFeedbackModal({ session, onClose, onSuccess }) {
           <form onSubmit={handleSubmit}>
             <div className="modal-body p-4">
               <h6 className="fw-bold text-kodigo-navy mb-1">{session?.code}: {session?.title}</h6>
-              <p className="text-muted small mb-4">How was today's session? Share your thoughts to help us improve!</p>
+              <p className="text-muted small mb-4">How was the activity? Share your thoughts to help us improve!</p>
 
               {error && <div className="alert alert-danger py-2 small">{error}</div>}
 
