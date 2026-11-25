@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { api } from '../services/api';
 
 const AuthContext = createContext(null);
@@ -7,6 +7,18 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token') || null);
   const [loading, setLoading] = useState(true);
+
+  const login = useCallback((tokenValue, userDetails) => {
+    localStorage.setItem('token', tokenValue);
+    setToken(tokenValue);
+    if (userDetails) setUser(userDetails);
+  }, []);
+
+  const logout = useCallback(() => {
+    localStorage.removeItem('token');
+    setToken(null);
+    setUser(null);
+  }, []);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -34,21 +46,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     fetchUser();
-  }, [token]);
-
-  const login = (tokenValue, userDetails) => {
-    localStorage.setItem('token', tokenValue);
-    setToken(tokenValue);
-    if (userDetails) {
-      setUser(userDetails);
-    }
-  };
-
-  const logout = () => {
-    localStorage.removeItem('token');
-    setToken(null);
-    setUser(null);
-  };
+  }, [token, logout]);
 
   return (
     <AuthContext.Provider value={{ user, token, loading, login, logout, setUser }}>

@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { useAuth } from '../context/AuthContext';
 import TestResultModal from '../components/TestResultModal';
 import SessionFeedbackModal from '../components/SessionFeedbackModal';
 
 export default function TraineeDashboard() {
-  const { user } = useAuth();
   const [enrollments, setEnrollments] = useState([]);
   const [selectedBatch, setSelectedBatch] = useState(null);
   const [sessions, setSessions] = useState([]);
@@ -37,42 +35,49 @@ export default function TraineeDashboard() {
     return () => clearInterval(interval);
   }, [submissions]);
 
-  const fetchDashboardData = async (isSilent = false) => {
+  const fetchDashboardData = async (isSilent = false, requestedBatchId = null) => {
     if (!isSilent) setLoading(true);
     setError('');
     try {
       const enrollRes = await api.getMyEnrollments();
       const userEnrollments = Array.isArray(enrollRes) ? enrollRes : enrollRes?.enrollments || [];
-      setEnrollments(userEnrollments);
+      const activeEnrollments = userEnrollments.filter((enrollment) => {
+        const batch = enrollment.batch;
+        return enrollment.status === 'active'
+          && batch && typeof batch === 'object'
+          && batch._id && batch.isArchived !== true;
+      });
+      setEnrollments(activeEnrollments);
 
-      if (userEnrollments.length > 0) {
-        const activeEnrollment = userEnrollments[0];
-        // Safely extract batch object or ID
-        const batchObj = typeof activeEnrollment.batch === 'object' ? activeEnrollment.batch : null;
-        const batchId = batchObj ? batchObj._id : activeEnrollment.batch;
+      const currentBatchId = selectedBatch?._id?.toString();
+      const preferredBatchId = requestedBatchId || currentBatchId;
+      const activeEnrollment = activeEnrollments.find(
+        (enrollment) => enrollment.batch._id.toString() === preferredBatchId?.toString()
+      ) || (activeEnrollments.length === 1 ? activeEnrollments[0] : null);
 
-        if (batchObj) {
-          setSelectedBatch(batchObj);
-        }
+      if (!activeEnrollment) {
+        setSelectedBatch(null);
+        setSessions([]);
+        setSubmissions({});
+      } else {
+        const batch = activeEnrollment.batch;
+        setSelectedBatch(batch);
+        const [sessionsRes, submissionsRes] = await Promise.all([
+          api.getSessionsByBatch(batch._id),
+          api.getMySubmissions().catch(() => [])
+        ]);
 
-        if (batchId) {
-          const [sessionsRes, submissionsRes] = await Promise.all([
-            api.getSessionsByBatch(batchId),
-            api.getMySubmissions().catch(() => [])
-          ]);
+        const sessionsList = Array.isArray(sessionsRes) ? sessionsRes : sessionsRes?.sessions || [];
+        setSessions(sessionsList);
 
-          const sessionsList = Array.isArray(sessionsRes) ? sessionsRes : sessionsRes?.sessions || [];
-          setSessions(sessionsList);
-
-          const subList = Array.isArray(submissionsRes) ? submissionsRes : submissionsRes?.submissions || [];
-          const subMap = {};
-          subList.forEach((sub) => {
-            const actId = sub.activity?._id ? sub.activity._id.toString() : (sub.activity ? sub.activity.toString() : null);
-            // Since subList is sorted by attemptNo DESC, only take the first (latest) attempt!
-            if (actId && !subMap[actId]) subMap[actId] = sub;
-          });
-          setSubmissions(subMap);
-        }
+        const subList = Array.isArray(submissionsRes) ? submissionsRes : submissionsRes?.submissions || [];
+        const subMap = {};
+        subList.forEach((sub) => {
+          const actId = sub.activity?._id ? sub.activity._id.toString() : (sub.activity ? sub.activity.toString() : null);
+          // Submissions are sorted by attempt number descending; keep only the latest attempt.
+          if (actId && !subMap[actId]) subMap[actId] = sub;
+        });
+        setSubmissions(subMap);
       }
     } catch (err) {
       console.error('Error loading dashboard:', err);
@@ -146,12 +151,37 @@ export default function TraineeDashboard() {
   return (
     <div className="p-4">
       {/* Dashboard Title Section */}
-      <div className="mb-4">
-        <h2 className="fw-bold mb-1" style={{ color: '#0f172a' }}>{selectedBatch?.name || 'Classroom Dashboard'}</h2>
-        <p className="text-muted small mb-0">
-          <span className="text-uppercase">{selectedBatch?.programTitle || 'Java Backend Development'}</span> | {selectedBatch?.mode || 'Online Class'}
-        </p>
+      <div className="d-flex justify-content-between align-items-start gap-3 mb-4">
+        <div>
+          <h2 className="fw-bold mb-1" style={{ color: '#0f172a' }}>{selectedBatch?.name || 'Classroom Dashboard'}</h2>
+          <p className="text-muted small mb-0">
+            <span className="text-uppercase">{selectedBatch?.programTitle || 'Java Backend Development'}</span> | {selectedBatch?.mode || 'Online Class'}
+          </p>
+        </div>
+        {enrollments.length > 1 && (
+          <select
+            className="form-select form-select-sm"
+            aria-label="Select active batch"
+            value={selectedBatch?._id || ''}
+            onChange={(event) => fetchDashboardData(false, event.target.value)}
+            style={{ maxWidth: '240px' }}
+          >
+            <option value="">Choose a batch</option>
+            {enrollments.map(({ batch }) => (
+              <option key={batch._id} value={batch._id}>{batch.name}</option>
+            ))}
+          </select>
+        )}
       </div>
+
+      {error && <div className="alert alert-danger" role="alert">{error}</div>}
+      {!selectedBatch && !error && (
+        <div className="alert alert-info" role="status">
+          {enrollments.length > 1
+            ? 'You are enrolled in more than one active batch. Choose a batch to view its sessions.'
+            : 'You do not have an active enrollment in an available batch yet. Please contact your administrator.'}
+        </div>
+      )}
 
       {/* Tabs Header */}
       <div className="d-flex border-bottom mb-4">

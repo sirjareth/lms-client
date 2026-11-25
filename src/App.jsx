@@ -6,8 +6,10 @@ import DashboardLayout from './components/DashboardLayout';
 // Pages
 import Login from './pages/Login';
 import Register from './pages/Register';
+import AuthCallback from './pages/AuthCallback';
 import TraineeDashboard from './pages/TraineeDashboard';
 import TrainerDashboard from './pages/TrainerDashboard';
+import AdminDashboard from './pages/AdminDashboard';
 
 function AppRoutes() {
   const { user } = useAuth();
@@ -17,6 +19,7 @@ function AppRoutes() {
       {/* Public Routes */}
       <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
       <Route path="/register" element={user ? <Navigate to="/" /> : <Register />} />
+      <Route path="/auth/callback" element={<AuthCallback />} />
 
       {/* Authenticated Dashboard Routes */}
       <Route element={<ProtectedRoute allowedRoles={['trainee', 'trainer', 'admin']} />}>
@@ -27,6 +30,9 @@ function AppRoutes() {
           </Route>
 
           {/* Private Trainer/Admin Routes */}
+          <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+            <Route path="/admin" element={<AdminDashboard />} />
+          </Route>
           <Route element={<ProtectedRoute allowedRoles={['trainer', 'admin']} />}>
             <Route path="/trainer" element={<TrainerDashboard />} />
           </Route>
@@ -38,7 +44,9 @@ function AppRoutes() {
         path="/"
         element={
           user ? (
-            (user.role === 'trainee' || (!user.role && !user.isAdmin)) ? (
+            user.isAdmin || user.role === 'admin' ? (
+              <Navigate to="/admin" />
+            ) : (user.role === 'trainee' || !user.role) ? (
               <Navigate to="/dashboard" />
             ) : (
               <Navigate to="/trainer" />

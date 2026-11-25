@@ -23,6 +23,13 @@ export default function Sidebar() {
         Navigation
       </div>
       <ul className="nav nav-pills flex-column mb-auto gap-1">
+        {(user?.role === 'admin' || user?.isAdmin) && (
+          <li className="nav-item">
+            <Link to="/admin" className="nav-link text-white py-2">
+              <i className="bi bi-people me-2"></i> Enrollment
+            </Link>
+          </li>
+        )}
         <li className="nav-item">
           <Link to={user?.role === 'trainer' || user?.isAdmin ? '/trainer' : '/dashboard'} className="nav-link text-white active bg-kodigo-blue py-2">
             <i className="bi bi-journal-text me-2"></i> Sessions

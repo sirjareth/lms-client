@@ -1,40 +1,95 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Outlet } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../services/api';
 import Sidebar from './Sidebar';
 
 export default function DashboardLayout() {
   const [showProfile, setShowProfile] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const menuRef = useRef(null);
+  const userName = user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'CodeGo user';
+  const dashboardPath = user?.isAdmin || user?.role === 'admin' ? '/admin' : '/dashboard';
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  useEffect(() => {
+    const closeOnOutsideClick = (event) => {
+      if (!menuRef.current?.contains(event.target)) setShowProfile(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setShowProfile(false);
+    };
+
+    document.addEventListener('mousedown', closeOnOutsideClick);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('mousedown', closeOnOutsideClick);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await api.logoutGoogleSession();
+    } catch (err) {
+      console.error('Could not end the Google session:', err);
+    } finally {
+      logout();
+      navigate('/login', { replace: true });
+    }
   };
 
   return (
     <div className="d-flex min-vh-100" style={{ backgroundColor: '#f8fafc' }}>
-      {/* Sidebar on the Left */}
       <Sidebar />
 
-      {/* Main Content Area on the Right */}
       <div className="flex-grow-1 d-flex flex-column overflow-auto">
-        <header className="d-flex justify-content-end align-items-center gap-2 px-4 pt-3">
-          <div className="position-relative">
-            <button className="btn btn-outline-primary" onClick={() => setShowProfile((visible) => !visible)}>
-              Profile
+        <header className="d-flex justify-content-end align-items-center px-4 pt-3">
+          <div className="position-relative" ref={menuRef}>
+            <button
+              type="button"
+              className="codego-avatar-button"
+              aria-label="Open account menu"
+              aria-haspopup="menu"
+              aria-expanded={showProfile}
+              onClick={() => setShowProfile((visible) => !visible)}
+            >
+              {user?.picture ? (
+                <img src={user.picture} alt="" className="codego-avatar" referrerPolicy="no-referrer" />
+              ) : (
+                <span className="codego-avatar-fallback"><i className="bi bi-person-fill" /></span>
+              )}
             </button>
+
             {showProfile && (
-              <div className="position-absolute end-0 mt-2 p-3 bg-white border rounded shadow-sm" style={{ zIndex: 10, minWidth: '240px' }}>
-                <div className="fw-semibold">{user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'User'}</div>
-                <div className="small text-muted">{user?.email}</div>
-                <div className="small text-uppercase text-muted mt-1">{user?.role || (user?.isAdmin ? 'admin' : 'trainee')}</div>
-              </div>
+              <nav className="codego-account-menu" aria-label="Account navigation" role="menu">
+                <div className="codego-account-identity">
+                  {user?.picture ? (
+                    <img src={user.picture} alt="" className="codego-avatar codego-avatar-large" referrerPolicy="no-referrer" />
+                  ) : (
+                    <span className="codego-avatar-fallback codego-avatar-large"><i className="bi bi-person-fill" /></span>
+                  )}
+                  <div className="text-truncate">
+                    <div className="fw-semibold text-truncate">{userName}</div>
+                    <div className="small text-muted text-truncate">{user?.email}</div>
+                  </div>
+                </div>
+                <div className="codego-menu-divider" />
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="codego-menu-item"
+                  onClick={() => { setShowProfile(false); navigate(dashboardPath); }}
+                >
+                  <i className="bi bi-journal-text" /> My dashboard
+                </button>
+                <div className="codego-menu-divider" />
+                <button type="button" role="menuitem" className="codego-menu-item codego-menu-logout" onClick={handleLogout}>
+                  <i className="bi bi-box-arrow-right" /> Sign out
+                </button>
+              </nav>
             )}
           </div>
-          <button className="btn btn-outline-danger" onClick={handleLogout}>Logout</button>
         </header>
         <Outlet />
       </div>
