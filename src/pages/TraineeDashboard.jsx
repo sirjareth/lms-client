@@ -3,6 +3,12 @@ import { api } from '../services/api';
 import TestResultModal from '../components/TestResultModal';
 import SessionFeedbackModal from '../components/SessionFeedbackModal';
 
+const formatProgramTitle = (value) => {
+  const title = (value || 'Java Backend Development').trim();
+  if (title !== title.toLocaleUpperCase()) return title;
+  return title.toLocaleLowerCase().replace(/\b\w/g, (letter) => letter.toLocaleUpperCase());
+};
+
 export default function TraineeDashboard() {
   const [enrollments, setEnrollments] = useState([]);
   const [selectedBatch, setSelectedBatch] = useState(null);
@@ -153,9 +159,9 @@ export default function TraineeDashboard() {
       {/* Dashboard Title Section */}
       <div className="d-flex justify-content-between align-items-start gap-3 mb-4">
         <div>
-          <h2 className="fw-bold mb-1" style={{ color: '#0f172a' }}>{selectedBatch?.name || 'Classroom Dashboard'}</h2>
+          <h2 className="codego-dashboard-title mb-1">{selectedBatch?.name || 'Classroom Dashboard'}</h2>
           <p className="text-muted small mb-0">
-            <span className="text-uppercase">{selectedBatch?.programTitle || 'Java Backend Development'}</span> | {selectedBatch?.mode || 'Online Class'}
+            {formatProgramTitle(selectedBatch?.programTitle)} | {selectedBatch?.mode || 'Online Class'}
           </p>
         </div>
         {enrollments.length > 1 && (
