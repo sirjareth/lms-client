@@ -144,19 +144,13 @@ body {
 .codego-brand-logo {
   width: 32px;
   height: 32px;
-  padding: 3px;
-  border-radius: 7px;
-  background: #fff;
   object-fit: contain;
+  filter: invert(1);
 }
 
 .codego-login-logo {
   width: 48px;
   height: 48px;
-  padding: 3px;
-  border: 1px solid #e2e8f0;
-  border-radius: 9px;
-  background: #fff;
   object-fit: contain;
 }
 
