@@ -27,7 +27,7 @@ export default function Navbar() {
       <div className="container-fluid">
         <Link className="navbar-brand navbar-brand-kodigo d-flex align-items-center gap-2" to="/">
           <img className="codego-brand-logo" src="/codego-logo.png" alt="" />
-          <span><strong className="text-white">CODEGO</strong> <span className="text-white fw-bold">LMS</span></span>
+          <span className="codego-brand-name"><strong>CODEGO</strong> <span className="codego-brand-suffix">LMS</span></span>
         </Link>
 
         {user && (
