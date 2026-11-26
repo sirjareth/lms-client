@@ -21,6 +21,7 @@ Read this file at the start of future work in this workspace, then read `PRODUCT
 - Feedback UI says **How was the activity?** / **Activity Feedback**. The current API operation remains session feedback; change its backend semantics only if explicitly requested.
 - Dashboard top-right has a Google-photo avatar fallback and a GitHub-inspired dropdown with name/email, My dashboard, and Sign out.
 - Admins land on `/admin`, which provides batch creation/editing, batch archiving, manual trainee enrollment/reactivation, and a roster for selected non-archived batches. Archiving preserves enrollment history. Admins can enroll by email before first login; the server provisions a trainee record that Google OAuth links by email. Archived batches and trainees actively enrolled in a different batch are excluded from enrollment choices.
+- Vercel serves the React SPA with a `vercel.json` rewrite to `/index.html`, so React Router paths such as `/auth/callback` work when opened directly or used as OAuth return paths.
 
 ## Google sign-in status
 
