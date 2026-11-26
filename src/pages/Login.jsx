@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../services/api';
 
 export default function Login() {
@@ -38,6 +38,9 @@ export default function Login() {
             </>
           )}
         </button>
+        <p className="small text-muted mt-3 mb-0">
+          By signing in, you agree to our <Link to="/privacy">Privacy Policy</Link>.
+        </p>
       </section>
     </main>
   );
