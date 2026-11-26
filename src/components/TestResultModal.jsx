@@ -5,6 +5,10 @@ export default function TestResultModal({ submissionId, onClose }) {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const isPassed = result
+    && !result.errorType
+    && Number(result.testsTotal) > 0
+    && Number(result.testsPassed) >= Number(result.testsTotal);
 
   useEffect(() => {
     const fetchResult = async () => {
@@ -62,7 +66,7 @@ export default function TestResultModal({ submissionId, onClose }) {
                     </span>
                   </div>
                   <div>
-                    {result.testsPassed === result.testsTotal ? (
+                    {isPassed ? (
                       <span className="badge-pass fs-6"><i className="bi bi-check-circle-fill me-1"></i> PASSED</span>
                     ) : (
                       <span className="badge-fail fs-6"><i className="bi bi-x-circle-fill me-1"></i> FAILED</span>
