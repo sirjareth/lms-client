@@ -26,7 +26,7 @@ export default function Navbar() {
     <nav className="navbar navbar-expand-lg bg-kodigo-navy navbar-dark shadow-sm py-3 px-4">
       <div className="container-fluid">
         <Link className="navbar-brand navbar-brand-kodigo d-flex align-items-center gap-2" to="/">
-          <i className="bi bi-code-square text-kodigo-blue fs-4"></i>
+          <img className="codego-brand-logo" src="/codego-logo.png" alt="" />
           <span><strong className="text-white">CODEGO</strong> <span className="text-white-50 fs-6">LMS</span></span>
         </Link>
 

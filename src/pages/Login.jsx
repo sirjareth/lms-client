@@ -14,7 +14,10 @@ export default function Login() {
   return (
     <main className="codego-login-page">
       <section className="codego-login-content" aria-labelledby="login-title">
-        <h1 id="login-title" className="codego-login-title">CodeGo</h1>
+        <h1 id="login-title" className="codego-login-title">
+          <img className="codego-login-logo" src="/codego-logo.png" alt="" />
+          <span>CodeGo</span>
+        </h1>
         <p className="visually-hidden">Sign in to CodeGo LMS with your Google account.</p>
         {searchParams.get('error') === 'google' && (
           <p className="text-danger small mb-2" role="alert">Google sign-in was cancelled or could not be completed. Please try again.</p>

@@ -15,6 +15,7 @@ export default function Sidebar() {
     >
       {/* Brand / Logo */}
       <div className="d-flex align-items-center mb-4 px-2 pt-2">
+        <img className="codego-brand-logo me-2" src="/codego-logo.png" alt="" />
         <h4 className="fw-bold mb-0 text-white" style={{ letterSpacing: '0.5px' }}>CodeGo</h4>
       </div>
 

@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
 
+const ERROR_TITLES = {
+  compile: 'Compilation failed',
+  timeout: 'Test run timed out',
+  clone_failed: 'Repository clone failed',
+  error: 'Checker error',
+};
+
 export default function TestResultModal({ submissionId, onClose }) {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -78,7 +85,7 @@ export default function TestResultModal({ submissionId, onClose }) {
                   <div className="alert alert-danger mb-4">
                     <div className="d-flex align-items-center gap-2 mb-2">
                         <i className="bi bi-exclamation-triangle-fill"></i>
-                        <strong className="text-uppercase">{result.errorType === 'compile' ? 'Compilation Failed' : 'Runtime Error'}</strong>
+                        <strong className="text-uppercase">{ERROR_TITLES[result.errorType] || 'Runtime Error'}</strong>
                     </div>
                     <div className="bg-dark text-warning p-3 rounded border border-warning border-opacity-50 overflow-auto" style={{ maxHeight: '400px' }}>
                         <pre className="mb-0 small font-monospace" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>

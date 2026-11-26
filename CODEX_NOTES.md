@@ -42,6 +42,7 @@ See `PRODUCT_NOTES.md` for the approved design. Current flow:
 - Server CORS now uses `CLIENT_URL` (defaults to `http://localhost:5173`). Production needs `CLIENT_URL`, `GOOGLE_CALLBACK_URL`, and a suitable session secret configured, plus matching Google OAuth redirect configuration.
 - `../server/services/checkerService.js` clones trainee repositories and runs `mvn test` via a child process in `../server/temp/submissions`. A production runtime needs Java and Maven installed, and the checker needs a safe isolated execution design and capacity/queue planning. Do not imply the current checker is production-safe.
 - The server repo now has a Dockerfile based on Node 24 Bookworm with OpenJDK 17, Maven, and Git; `.dockerignore` excludes environment files and OAuth credentials. Render must build the server with the Docker runtime for auto-checking. This Dockerfile supplies tools but does not sandbox student-controlled Maven code from API secrets; keep the checker private/pilot-only until isolated worker execution is designed.
+- Auto-checker Maven execution now defaults to a 5-minute timeout, configurable with `CHECKER_TIMEOUT_MS`; TestResultModal labels timeout and other checker errors accurately. The first Render submission may take longer while Maven downloads dependencies.
 - Database availability, persistence, and free-tier limits are separate from Vercel/Render hosting and must be checked for the chosen MongoDB provider.
 
 ## Collaboration preferences

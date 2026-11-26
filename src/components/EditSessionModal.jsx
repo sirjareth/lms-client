@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
 
+const toDateTimeLocalValue = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return localDate.toISOString().slice(0, 16);
+};
+
 export default function EditSessionModal({ session, onClose, onSuccess }) {
   const [code, setCode] = useState(session.code || '');
   const [title, setTitle] = useState(session.title || '');
@@ -19,8 +27,44 @@ export default function EditSessionModal({ session, onClose, onSuccess }) {
   );
 
   const [loading, setLoading] = useState(false);
+  const [activityLoading, setActivityLoading] = useState(Boolean(session.activity?._id));
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
+  const [activityLoadError, setActivityLoadError] = useState('');
+
+  useEffect(() => {
+    const activityId = session.activity?._id || session.activity?.id;
+    if (!activityId) {
+      setActivityLoading(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    setActivityLoading(true);
+    setActivityLoadError('');
+
+    api.getActivity(activityId)
+      .then((activity) => {
+        if (cancelled) return;
+        setHasActivity(true);
+        setActivityTitle(activity.title || '');
+        setActivityType(activity.type || 'activity');
+        setTestSuitePath(activity.testSuite || '');
+        setInstructions(activity.instructions || '');
+        setDueAt(toDateTimeLocalValue(activity.dueAt));
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.error('Failed to load activity details:', err);
+          setActivityLoadError(err.message || 'Could not load existing activity details.');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setActivityLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [session._id, session.activity?._id, session.activity?.id]);
 
   const handleDeleteActivity = async () => {
     if (!session.activity?._id) return;
@@ -170,6 +214,9 @@ export default function EditSessionModal({ session, onClose, onSuccess }) {
                 </div>
               </div>
 
+              {activityLoadError && <div className="alert alert-warning py-2">{activityLoadError}</div>}
+              {activityLoading && <div className="small text-muted mb-3">Loading existing activity details...</div>}
+
               {hasActivity && (
                 <div className="row g-3">
                   <div className="col-md-8">
@@ -238,7 +285,7 @@ export default function EditSessionModal({ session, onClose, onSuccess }) {
               </button>
               <div>
                 <button type="button" className="btn btn-secondary btn-sm px-4 me-2" onClick={onClose}>Cancel</button>
-                <button type="submit" className="btn btn-primary btn-sm px-4" disabled={loading || deleting}>
+                <button type="submit" className="btn btn-primary btn-sm px-4" disabled={loading || deleting || activityLoading || Boolean(activityLoadError)}>
                   {loading ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>

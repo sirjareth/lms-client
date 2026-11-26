@@ -195,6 +195,15 @@ export const api = {
     return res.json();
   },
 
+  getActivity: async (activityId) => {
+    const res = await fetch(`${API_URL}/activities/${activityId}`, {
+      headers: getHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Could not load activity details.');
+    return data;
+  },
+
   updateSession: async (sessionId, data) => {
     const res = await fetch(`${API_URL}/sessions/${sessionId}`, {
       method: 'PATCH',
