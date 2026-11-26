@@ -66,7 +66,7 @@ export default function PrivacyPolicy() {
       </article>
 
       <footer className="pt-4 text-center small">
-        <Link to="/">Back to CodeGo LMS</Link>
+        <Link to="/login">Back to login</Link>
       </footer>
     </main>
   );
