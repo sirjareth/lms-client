@@ -23,6 +23,7 @@ function AppRoutes() {
       <Route path="/register" element={user ? <Navigate to="/" /> : <Register />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/home" element={<PublicHome />} />
 
       {/* Authenticated Dashboard Routes */}
       <Route element={<ProtectedRoute allowedRoles={['trainee', 'trainer', 'admin']} />}>
@@ -55,7 +56,7 @@ function AppRoutes() {
               <Navigate to="/trainer" />
             )
           ) : (
-            <PublicHome />
+            <Login />
           )
         }
       />
